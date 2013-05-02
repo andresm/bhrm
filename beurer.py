@@ -23,11 +23,18 @@
 # If you are experiencing problems with your HRM not beign detecte under
 # linux, be sure to add it to udev rules
 #
+# To use this file from the command line use:
+#
+#     beurer.py [-a] [-o outputfile]
+#
+# -a: Turn ascii on, else the raw bytes are returned.
+# -o: Dumps the results into a file.
+
+import sys
+import getopt
 import usb.core
 import usb.util
 
-# TODO: Command line interface
-# TODO: Complete the switch case for baud rates
 # TODO: Separate delete data function
 # TODO: Check number of bytes recieved
 
@@ -69,17 +76,12 @@ class HeartRateMonitor():
 
         self.device.set_configuration()
 
-    def close(self):
-        """Close the device."""
-        self.device.close()
-
     def download_data(self):
         """Connect and get all the training data from device"""
         self.open()
         self.set_baud_rate(9600)
         self.set_time_out(0xD0)
-        self._get_all_data()
-        self.close()
+        return self._get_all_data()
 
     def _recieve_command_data(self):
         """Get data from a command sent to the device."""
@@ -128,19 +130,21 @@ class HeartRateMonitor():
 
     def _get_all_data(self):
         """Get all the training data."""
+        buffer_ = []
         msg = '\x91\x01\x00\x01\x93'  # Initial message
         while True:
-            if ord(msg[3]) == 0:
+            if ord(msg[3]) == 0:  # Move after send_message to delete data
                 break
 
             self.send_message(msg)
             response = self._recieve_command_data()
-            print response
+            buffer_.append(map(int, response))
             checksum = self._recieve_checksum()
             if not self._check_msg_checksum(response, checksum):
                 raise HRMException('Transmission error, bad checksum.')
 
             msg = self._next_message(response)
+        return buffer_
 
     def _next_message(self, last_message):
         """Returns next message.
@@ -168,28 +172,132 @@ class HeartRateMonitor():
 
     def set_baud_rate(self, rate):
         """Set device baud rate."""
+        bm_request_type = 0x40
+        b_request = 0xC
+        value = 0x5003
+        index = 0xF0
         if self.device is None:
             raise HRMException("Device not connected (Opened)")
 
-        if rate == 9600:
+        if rate == 102400:
+            msg = '\x60'
+
+        elif rate == 57600:
+            msg = '\x50'
+
+        elif rate == 51200:
+            msg = '\x40'
+
+        elif rate == 38400:
+            msg = '\x30'
+
+        elif rate == 19200:
+            msg = '\x20'
+
+        elif rate == 9600:
             msg = '\x10'
 
-        self.device.ctrl_transfer(0x40, 0xC, 0x5003, 0xF0, msg)
+        elif rate == 4800:
+            msg = '\x00'
+
+        elif rate == 2400:
+            msg = '\x90'
+
+        elif rate == 1200:
+            msg == '\x80'
+
+        else:
+            raise HRMException('Wrong baud rate.')
+
+        self.device.ctrl_transfer(bm_request_type, b_request, value, index,
+                                    msg)
 
     def set_time_out(self, timeout):
         """Set device timeout"""
+        bm_request_type = 0x40
+        b_request = 0xC
+        value = 0x5003
+        index = 0xFFFF
         if self.device is None:
             raise HRMException("Device not connected (Opened)")
 
         msg = chr(timeout)
-        self.device.ctrl_transfer(0x40, 0xC, 0x5003, 0xFFFF, msg)
+        self.device.ctrl_transfer(bm_request_type, b_request, value, index,
+                                    msg)
+
+
+def _format_data(data, asciiflag):
+    """Format the HRM output."""
+    outputdata = ''
+    if asciiflag:
+        for row in data:
+            #outputdata.append(map(str, row))
+            msg = ''
+            for byte in row:
+                msg += str(byte) + ' '
+
+            outputdata += msg + '\n'
+
+    else:
+        for row in data:
+            msg = ''
+            for byte in row:
+                msg += chr(byte)
+
+            outputdata += msg
+
+    return outputdata
+
+
+def _write_data(outputfile):
+    """Write data to console or file."""
+    if outputfile is None:
+        sys.stdout.write(outputdata)
+
+    else:
+        hfile = open(outputfile, 'wb')
+        hfile.write(outputdata)
+        hfile.close()
+
 
 if __name__ == '__main__':
+    data = None
+    outputdata = ''
+    outputfile = None
+    asciiflag = False
+
+    # Parser command line options
+    try:
+        argv = sys.argv[1:]
+        opts, args = getopt.getopt(argv, "hao:")
+
+        for option in opts:
+            if option[0] == '-a':
+                asciiflag = True
+
+            elif option[0] == '-o':
+                outputfile = option[1]
+
+            elif option[0] == '-h':
+                print 'beurer.py [-a] [-o outputfile]'
+                exit(0)
+
+    except getopt.GetoptError:
+        print 'beurer.py [-a] [-o outputfile]'
+        sys.exit(2)
+
+    # Get data
     try:
         hrt = HeartRateMonitor()
-        hrt.download_data()
-        exit(0)
+        data = hrt.download_data()
 
     except HRMException as error:
         print error.msg
-        exit(1)
+        exit(2)
+
+    if data is None:
+        exit(2)
+
+    # Write data
+    outputdata = _format_data(data, asciiflag)
+    _write_data(outputdata)
