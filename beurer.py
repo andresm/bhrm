@@ -249,7 +249,7 @@ def _format_data(data, asciiflag):
     return outputdata
 
 
-def _write_data(outputfile):
+def _write_data(outputfile, outputdata):
     """Write data to console or file."""
     if outputfile is None:
         sys.stdout.write(outputdata)
@@ -300,4 +300,4 @@ if __name__ == '__main__':
 
     # Write data
     outputdata = _format_data(data, asciiflag)
-    _write_data(outputdata)
+    _write_data(outputfile, outputdata)
