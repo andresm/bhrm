@@ -1,0 +1,2 @@
+# MegaWin MA101 USB Bridge
+SUBSYSTEM=="usb", ATTR{product}=="USB Bridge", DRIVER=="usb", ATTR{idVendor}=="0e6a" , ATTR{idProduct}=="0101", MODE:="0666"
