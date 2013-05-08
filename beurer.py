@@ -35,24 +35,13 @@ import getopt
 import usb.core
 import usb.util
 
+from exception import HRMException
+
 # TODO: Separate delete data function
-# TODO: Check number of bytes recieved
+# TODO: Check number of bytes received
 
 
-class HRMException(Exception):
-
-    """Exceptions thrown by the HRM"""
-    def __init__(self, msg):
-        """Initialize object."""
-        super(HRMException, self).__init__()
-        self.msg = msg
-
-    def __str__(self):
-        """Returns error message."""
-        return self.msg
-
-
-class HeartRateMonitor():
+class HeartRateMonitor(object):
 
     """Beurar Heart Rate Monitor Interface class."""
 
@@ -83,7 +72,7 @@ class HeartRateMonitor():
         self.set_time_out(0xD0)
         return self._get_all_data()
 
-    def _recieve_command_data(self):
+    def _receive_command_data(self):
         """Get data from a command sent to the device."""
         bm_request_type = 0xC0
         b_request = 0x4
@@ -119,7 +108,7 @@ class HeartRateMonitor():
         return response
 
     def _check_msg_checksum(self, msg, checksum):
-        """Check recieved message checksum."""
+        """Check received message checksum."""
         valid = False
         accumulator = 0x0
         for byte in msg[:-1]:
@@ -137,7 +126,7 @@ class HeartRateMonitor():
                 break
 
             self.send_message(msg)
-            response = self._recieve_command_data()
+            response = self._receive_command_data()
             buffer_.append(map(int, response))
             checksum = self._recieve_checksum()
             if not self._check_msg_checksum(response, checksum):
@@ -171,7 +160,15 @@ class HeartRateMonitor():
         return accumulator & 0x0FF
 
     def set_baud_rate(self, rate):
-        """Set device baud rate."""
+        """Set device baud rate.
+
+        args:
+            rate -- Baud rate value to be set.
+
+        Only some values are allowed: 102400, 57600, 51200, 38400, 19200
+        9600, 4800, 2400, 1200
+
+        """
         bm_request_type = 0x40
         b_request = 0xC
         value = 0x5003
