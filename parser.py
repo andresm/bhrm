@@ -34,13 +34,19 @@ class Parser(object):
         self.report = HRMReport()
         position = 0
         buffer_ = map(ord, stream.read())
+        i = 0
 
-        if (buffer_[position] >> 4) == 1:
-            position = self._parse_header(buffer_, position)
+        while i < 3:
+            if (buffer_[position] >> 4) == 1:
+                position = self._parse_header(buffer_, position)
 
-        if (buffer_[position] >> 4) == 3:
-            position = self._parse_fitness(buffer_, position)
+            if (buffer_[position] >> 4) == 2:
+                position = self._parse_results(buffer_, position)
 
+            if (buffer_[position] >> 4) == 3:
+                position = self._parse_fitness(buffer_, position)
+
+            i += 1
         self.report.dump()
 
     def _parse_header(self, buffer_, position):
@@ -50,6 +56,8 @@ class Parser(object):
 
         # Gender
         self.report.gender = (buffer_[position + 3] >> 7)
+        self.report.age = (buffer_[position + 3] & 0x7F)
+        self.report.weight = (buffer_[position + 4])
         self.report.height = (buffer_[position + 5])
         self.report.hr_hlimit = (buffer_[position + 6])
         self.report.hr_llimit = buffer_[position + 7]
@@ -57,9 +65,9 @@ class Parser(object):
         return position + buffer_[position + 1] + 4
 
     def _parse_fitness(self, buffer_, position):
-        """Parse data section."""
+        """Parse fitness section."""
         base_year = 2000
-        self.report.fitness_flag = buffer_[position + 2]  # TODO: CHECK
+        self.report.fitness_flag = buffer_[position + 2]
         self.report.min = self._bcd2hex(buffer_[position + 3])
         self.report.hr = self._bcd2hex(buffer_[position + 4])
         self.report.day = self._bcd2hex(buffer_[position + 5])
@@ -67,6 +75,25 @@ class Parser(object):
         self.report.year = self._bcd2hex(buffer_[position + 7]) + base_year
         self.report.fitness = buffer_[position + 8]
         self.report.vo2max = buffer_[position + 9]
+        return position + buffer_[position + 1] + 4
+
+    def _parse_results(self, buffer_, position):
+        """Parse the results section."""
+        print buffer_[position]
+        self.report.kcal = buffer_[position + 4]
+        self.report.fat = buffer_[position + 6]
+        self.report.tr_intime_seg = self._bcd2hex(buffer_[position + 8])
+        self.report.tr_intime_min = self._bcd2hex(buffer_[position + 9])
+        self.report.tr_intime_hr = self._bcd2hex(buffer_[position + 10])
+        self.report.tr_ltime_seg = self._bcd2hex(buffer_[position + 11])
+        self.report.tr_ltime_min = self._bcd2hex(buffer_[position + 12])
+        self.report.tr_ltime_hr = self._bcd2hex(buffer_[position + 13])
+        self.report.tr_htime_seg = self._bcd2hex(buffer_[position + 14])
+        self.report.tr_htime_min = self._bcd2hex(buffer_[position + 15])
+        self.report.tr_htime_hr = self._bcd2hex(buffer_[position + 16])
+        self.report.tr_hrmax = buffer_[position + 17]
+        self.report.tr_hravg = buffer_[position + 18]
+        return position + buffer_[position + 1] + 4
 
     def _checkchecksum(self, buffer_, position):
         """Checks the data chunk checksum."""
