@@ -32,12 +32,27 @@ class HRMReport(object):
         self.height = 0
         self.hr_llimit = 0
         self.hr_hlimit = 0
+        self.hr_maximun = 0
+        self.fitness_flag = 0
+        self.min = 0
+        self.hr = 0
+        self.day = 0
+        self.month = 0
+        self.year = 0
+        self.fitness = 0
+        self.vo2max = 0
 
     def dump(self):
         """Dumps the report data."""
         print 'Heart Rate Monitor Report'
         print '-------------------------'
-        print 'gender: %s' % (self.gender and 'M' or 'F')
-        print 'height: %s' % self.height
+        print 'Gender: %s' % (self.gender and 'M' or 'F')
+        print 'Height: %s' % self.height
         print 'Heart rate high limit: %s' % self.hr_hlimit
         print 'Heart rate low limit: %s' % self.hr_llimit
+        print 'Heart rate maximun: %s' % self.hr_maximun
+        print 'Fitness flag: %s' % self.fitness_flag
+        print 'Updated on : %s-%s-%s %s:%s' % (self.year, self.month, self.day,
+                                        self.hr, self.min)
+        print 'Fitness: %s' % self.fitness
+        print 'Vo2 Max: %s' % self.vo2max

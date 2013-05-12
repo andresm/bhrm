@@ -36,7 +36,10 @@ class Parser(object):
         buffer_ = map(ord, stream.read())
 
         if (buffer_[position] >> 4) == 1:
-            self._parse_header(buffer_, position)
+            position = self._parse_header(buffer_, position)
+
+        if (buffer_[position] >> 4) == 3:
+            position = self._parse_fitness(buffer_, position)
 
         self.report.dump()
 
@@ -49,7 +52,21 @@ class Parser(object):
         self.report.gender = (buffer_[position + 3] >> 7)
         self.report.height = (buffer_[position + 5])
         self.report.hr_hlimit = (buffer_[position + 6])
-        self.report.hr_llimit = (buffer_[position + 7])
+        self.report.hr_llimit = buffer_[position + 7]
+        self.report.hr_maximun = buffer_[position + 8]
+        return position + buffer_[position + 1] + 4
+
+    def _parse_fitness(self, buffer_, position):
+        """Parse data section."""
+        base_year = 2000
+        self.report.fitness_flag = buffer_[position + 2]  # TODO: CHECK
+        self.report.min = self._bcd2hex(buffer_[position + 3])
+        self.report.hr = self._bcd2hex(buffer_[position + 4])
+        self.report.day = self._bcd2hex(buffer_[position + 5])
+        self.report.month = self._bcd2hex(buffer_[position + 6])
+        self.report.year = self._bcd2hex(buffer_[position + 7]) + base_year
+        self.report.fitness = buffer_[position + 8]
+        self.report.vo2max = buffer_[position + 9]
 
     def _checkchecksum(self, buffer_, position):
         """Checks the data chunk checksum."""
@@ -59,6 +76,12 @@ class Parser(object):
             accumulator += buffer_[position + i]
 
         return True
+
+    def _bcd2hex(self, byte):
+        """Returns byte value of a BCD byte."""
+        low = byte & 0xF
+        high = (byte >> 4) & 0xF
+        return low + high * 10
 
 if __name__ == '__main__':
     data_source = sys.stdin

@@ -43,7 +43,7 @@ from exception import HRMException
 
 class HeartRateMonitor(object):
 
-    """Beurar Heart Rate Monitor Interface class."""
+    """Beurer Heart Rate Monitor Interface class."""
 
     def __init__(self):
         """Initialize the heart rate monitor.
