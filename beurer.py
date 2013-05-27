@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with Starker.  If not, see <http://www.gnu.org/licenses/>.
+# along with this file.  If not, see <http://www.gnu.org/licenses/>.
 
 # This file connects to Beurer Heart Rate monitors using the USB port
 # to get the trainig data.
@@ -79,7 +79,7 @@ class HeartRateMonitor(object):
         value = 0x5002
         index = 0x0
         length = 0xFA0
-        timeout = 10000
+        timeout = 3000
         response = self.device.ctrl_transfer(bm_request_type, b_request, value,
                                             index, length, timeout)
         return response
@@ -91,9 +91,10 @@ class HeartRateMonitor(object):
         value = 0x500D
         index = 0x0
         length = 0x2
-        timeout = 1000
+        timeout = 10000
         response = self.device.ctrl_transfer(bm_request_type, b_request, value,
                                             index, length, timeout)
+
         return response
 
     def send_message(self, msg):
@@ -102,7 +103,7 @@ class HeartRateMonitor(object):
         b_request = 0x4
         value = 0x5001
         index = 0x0
-        timeout = 1000
+        timeout = 10000
         response = self.device.ctrl_transfer(bm_request_type, b_request,
                                             value, index, msg, timeout)
         return response

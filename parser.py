@@ -15,13 +15,14 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with Starker.  If not, see <http://www.gnu.org/licenses/>.
+# along with this file.  If not, see <http://www.gnu.org/licenses/>.
 
 # This file interpret the raw data read from the heart rate monitor
 import sys
 
 from report import HRMReport
 from exception import HRMException
+from lap import Lap
 
 
 class Parser(object):
@@ -36,7 +37,7 @@ class Parser(object):
         buffer_ = map(ord, stream.read())
         i = 0
 
-        while i < 3:
+        while i < 6:
             if (buffer_[position] >> 4) == 1:
                 position = self._parse_header(buffer_, position)
 
@@ -45,6 +46,15 @@ class Parser(object):
 
             if (buffer_[position] >> 4) == 3:
                 position = self._parse_fitness(buffer_, position)
+
+            if (buffer_[position] >> 4) == 4:
+                position = self._parse_heart_rates(buffer_, position)
+
+            if (buffer_[position] >> 4) == 5:
+                position = self._parse_speed(buffer_, position)
+
+            if (buffer_[position] >> 4) == 6:
+                position = self._parse_lap_results(buffer_, position)
 
             i += 1
         self.report.dump()
@@ -79,7 +89,6 @@ class Parser(object):
 
     def _parse_results(self, buffer_, position):
         """Parse the results section."""
-        print buffer_[position]
         self.report.kcal = buffer_[position + 4]
         self.report.fat = buffer_[position + 6]
         self.report.tr_intime_seg = self._bcd2hex(buffer_[position + 8])
@@ -93,6 +102,40 @@ class Parser(object):
         self.report.tr_htime_hr = self._bcd2hex(buffer_[position + 16])
         self.report.tr_hrmax = buffer_[position + 17]
         self.report.tr_hravg = buffer_[position + 18]
+        return position + buffer_[position + 1] + 4
+
+    def _parse_heart_rates(self, buffer_, position):
+        """Parses the heart rates section."""
+        datalen = (buffer_[position + 2] << 4) + buffer_[position + 1]
+        self.report.hr_data_hour = buffer_[position + 4]
+        self.report.hr_data_min = buffer_[position + 5]
+        hr_offset = 6
+        while hr_offset < datalen + 3:
+            self.report.hr_data.append(buffer_[position + hr_offset])
+            hr_offset = hr_offset + 1
+
+        return position + buffer_[position + 1] + 4
+
+    def _parse_speed(self, buffer_, position):
+        """Parses the heart rates section."""
+        # Distance?
+        return position + buffer_[position + 1] + 4
+
+    def _parse_lap_results(self, buffer_, position):
+        """Parse the lap result section."""
+        len_ = buffer_[position + 1] + 4
+        lap_offset = 10
+        id_ = 0
+        while lap_offset < len_ - 1:
+            lap = Lap(id_)
+            lap.seg = self._bcd2hex(buffer_[position + lap_offset])
+            lap.min = self._bcd2hex(buffer_[position + lap_offset + 1])
+            lap.hour = self._bcd2hex(buffer_[position + lap_offset + 2])
+            lap.hr = buffer_[position + lap_offset + 3]
+            self.report.laps.append(lap)
+            lap_offset = lap_offset + 7
+            id_ = id_ + 1
+
         return position + buffer_[position + 1] + 4
 
     def _checkchecksum(self, buffer_, position):

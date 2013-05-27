@@ -15,7 +15,7 @@
 # GNU General Public License for more details.
 
 # You should have received a copy of the GNU General Public License
-# along with Starker.  If not, see <http://www.gnu.org/licenses/>.
+# along with this file.  If not, see <http://www.gnu.org/licenses/>.
 
 # This file provides a class to encapsulate the interpreted data read from
 # the heart rate monitor
@@ -58,6 +58,12 @@ class HRMReport(object):
         self.tr_htime_hr = 0
         self.tr_htime_hr = 0
         self.tr_htime_hr = 0
+        # Laps
+        self.laps = []
+        # Heart rate data
+        self.hr_data_hour = 0
+        self.hr_data_min = 0
+        self.hr_data = []
 
     def dump(self):
         """Dumps the report data."""
@@ -79,12 +85,25 @@ class HRMReport(object):
         print 'Kcal: %s' % self.kcal
         print 'Training Max HR: %s' % self.tr_hrmax
         print 'Training AVG HR: %s' % self.tr_hravg
-        print 'Training time below target HR: %s:%s:%s' % (self.tr_ltime_hr,
+        print 'Training time below target HR: %02d:%02d:%02d' % \
+                                                            (self.tr_ltime_hr,
                                                             self.tr_ltime_min,
                                                             self.tr_ltime_seg)
-        print 'Training time in target HR: %s:%s:%s' % (self.tr_intime_hr,
+        print 'Training time in target HR: %02d:%02d:%02d' % \
+                                                            (self.tr_intime_hr,
                                                             self.tr_intime_min,
                                                             self.tr_intime_seg)
-        print 'Training time over target HR: %s:%s:%s' % (self.tr_htime_hr,
+        print 'Training time over target HR: %02d:%02d:%02d' % \
+                                                            (self.tr_htime_hr,
                                                             self.tr_htime_min,
                                                             self.tr_htime_seg)
+        print 'Heart Rate data start time: %02d:%02d' % \
+                                                            (self.hr_data_hour,
+                                                            self.hr_data_min)
+        print 'Heart Rate data: %s' % self.hr_data
+
+        for lap in self.laps:
+            print 'Lap %s' % lap.id
+            print '  Lap duration: %02d:%02d:%02d' % (lap.hour, lap.min,
+                                                        lap.seg)
+            print '  Lap HR: %s' % lap.hr

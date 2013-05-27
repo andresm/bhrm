@@ -17,18 +17,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this file.  If not, see <http://www.gnu.org/licenses/>.
 
-# This file provides an exception base class for the project
+# This file provides a class to encapsulate the interpreted data read from
+# the heart rate monitor
 
 
-class HRMException(Exception):
+class Lap(object):
 
-    """Exceptions thrown by the HRM"""
+    """Class with lap information"""
 
-    def __init__(self, msg):
-        """Initialize object."""
-        super(HRMException, self).__init__()
-        self.msg = msg
-
-    def __str__(self):
-        """Returns error message."""
-        return self.msg
+    def __init__(self, id_):
+        """Initializes the object."""
+        self.id = id_
+        self.hour = 0
+        self.min = 0
+        self.seg = 0
+        self.hr = 0
