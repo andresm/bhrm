@@ -77,8 +77,8 @@ class HRMReport(object):
         print 'Heart rate low limit: %s' % self.hr_llimit
         print 'Heart rate maximun: %s' % self.hr_maximun
         print 'Fitness flag: %s' % self.fitness_flag
-        print 'Updated on : %s-%s-%s %s:%s' % (self.year, self.month, self.day,
-                                        self.hr, self.min)
+        print 'Updated on : %s-%02d-%02d %02d:%02d' % (self.year, self.month,
+                                        self.day, self.hr, self.min)
         print 'Fitness: %s' % self.fitness
         print 'Vo2 Max: %s' % self.vo2max
         print 'Fat: %s' % self.fat
@@ -102,6 +102,13 @@ class HRMReport(object):
                                                             self.hr_data_min)
         print 'Heart Rate data: %s' % self.hr_data
 
+        print 'Lap results start time: %s-%02d-%02d %02d:%02d:%02d' % \
+                                                    (self.lr_data_year,
+                                                    self.lr_data_month,
+                                                    self.lr_data_day,
+                                                    self.lr_data_hour,
+                                                     self.lr_data_min,
+                                                     self.lr_data_seg)
         for lap in self.laps:
             print 'Lap %s' % lap.id
             print '  Lap duration: %02d:%02d:%02d' % (lap.hour, lap.min,

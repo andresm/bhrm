@@ -77,7 +77,10 @@ class Parser(object):
         self.report.hr_hlimit = (buffer_[position + 6])
         self.report.hr_llimit = buffer_[position + 7]
         self.report.hr_maximun = buffer_[position + 8]
-        return position + buffer_[position + 1] + 4
+
+        final_byte = position + buffer_[position + 1] + 4
+        logging.debug(map(hex, buffer_[position:final_byte]))
+        return final_byte
 
     def _parse_fitness(self, buffer_, position):
         """Parse fitness section."""
@@ -91,7 +94,10 @@ class Parser(object):
         self.report.year = self._bcd2hex(buffer_[position + 7]) + base_year
         self.report.fitness = buffer_[position + 8]
         self.report.vo2max = buffer_[position + 9]
-        return position + buffer_[position + 1] + 4
+
+        final_byte = position + buffer_[position + 1] + 4
+        logging.debug(map(hex, buffer_[position:final_byte]))
+        return final_byte
 
     def _parse_results(self, buffer_, position):
         """Parse the results section."""
@@ -109,34 +115,47 @@ class Parser(object):
         self.report.tr_htime_hr = self._bcd2hex(buffer_[position + 16])
         self.report.tr_hrmax = buffer_[position + 17]
         self.report.tr_hravg = buffer_[position + 18]
-        return position + buffer_[position + 1] + 4
+
+        final_byte = position + buffer_[position + 1] + 4
+        logging.debug(map(hex, buffer_[position:final_byte]))
+        return final_byte
 
     def _parse_heart_rates(self, buffer_, position):
         """Parses the heart rates section."""
         logging.info('Parsing heart rates section.')
         datalen = (buffer_[position + 2] << 4) + buffer_[position + 1]
-        self.report.hr_data_hour = buffer_[position + 4]
-        self.report.hr_data_min = buffer_[position + 5]
+        self.report.hr_data_min = self._bcd2hex(buffer_[position + 4])
+        self.report.hr_data_hour = self._bcd2hex(buffer_[position + 5])
         hr_offset = 6
         while hr_offset < datalen + 3:
             self.report.hr_data.append(buffer_[position + hr_offset])
             hr_offset = hr_offset + 1
 
-        return position + buffer_[position + 1] + 4
+        final_byte = position + buffer_[position + 1] + 4
+        logging.debug(map(hex, buffer_[position:final_byte]))
+        return final_byte
 
     def _parse_speed(self, buffer_, position):
         """Parses the heart rates section."""
         # Distance?
         logging.info('Parsing distance section.')
-        return position + buffer_[position + 1] + 4
+        final_byte = position + buffer_[position + 1] + 4
+        logging.debug(map(hex, buffer_[position:final_byte]))
+        return final_byte
 
     def _parse_lap_results(self, buffer_, position):
         """Parse the lap result section."""
         logging.info('Parsing lap results section.')
-        len_ = buffer_[position + 1] + 4
+        len_ = (buffer_[position + 2] << 4) + buffer_[position + 1]
+        self.report.lr_data_seg = self._bcd2hex(buffer_[position + 4])
+        self.report.lr_data_min = self._bcd2hex(buffer_[position + 5])
+        self.report.lr_data_hour = self._bcd2hex(buffer_[position + 6])
+        self.report.lr_data_day = self._bcd2hex(buffer_[position + 7])
+        self.report.lr_data_month = self._bcd2hex(buffer_[position + 8])
+        self.report.lr_data_year = self._bcd2hex(buffer_[position + 9]) + 2000
         lap_offset = 10
         id_ = 0
-        while lap_offset < len_ - 1:
+        while lap_offset < len_ + 3:
             lap = Lap(id_)
             lap.seg = self._bcd2hex(buffer_[position + lap_offset])
             lap.min = self._bcd2hex(buffer_[position + lap_offset + 1])
@@ -146,7 +165,9 @@ class Parser(object):
             lap_offset = lap_offset + 7
             id_ = id_ + 1
 
-        return position + buffer_[position + 1] + 4
+        final_byte = position + len_ + 4
+        logging.debug(map(hex, buffer_[position:final_byte]))
+        return final_byte
 
     def _checkchecksum(self, buffer_, position):
         """Checks the data chunk checksum."""
