@@ -38,7 +38,6 @@ import logging
 
 from exception import HRMException
 
-# TODO: Check number of bytes received
 __VERSION__ = 0.1
 
 
@@ -94,9 +93,9 @@ class HeartRateMonitor(object):
         logging.debug(map(hex, response))
         return response
 
-    def _recieve_checksum(self):
-        """Returns a single recieved message checksum."""
-        logging.info('Receiving data checksum.')
+    def _receive_byte_count(self):
+        """Returns the last message byte count."""
+        logging.info('Receiving last message byte count.')
         bm_request_type = 0xC0
         b_request = 0x4
         value = 0x500D
@@ -105,9 +104,10 @@ class HeartRateMonitor(object):
         timeout = 10000
         response = self.device.ctrl_transfer(bm_request_type, b_request, value,
                                             index, length, timeout)
-        logging.debug('Checksum received:')
+        logging.debug('Byte count received:')
         logging.debug(map(hex, response))
-        return response
+        byte_count = (response[0] << 8) + response[1]
+        return byte_count
 
     def send_message(self, msg):
         """Send a single control message."""
@@ -123,7 +123,7 @@ class HeartRateMonitor(object):
         logging.debug(map(hex, map(ord, msg)))
         return response
 
-    def _check_msg_checksum(self, msg, checksum):
+    def _check_msg_checksum(self, msg):
         """Check received message checksum."""
         valid = False
         accumulator = 0x0
@@ -153,9 +153,12 @@ class HeartRateMonitor(object):
             self.send_message(msg)
             response = self._receive_command_data()
             buffer_.append(map(int, response))
-            checksum = self._recieve_checksum()
-            if not self._check_msg_checksum(response, checksum):
+            byte_count = self._receive_byte_count()
+            if not self._check_msg_checksum(response):
                 raise HRMException('Transmission error, bad checksum.')
+
+            if len(response) != byte_count:
+                raise HRMException('Transmission error, bytes lost.')
 
             msg = self._next_message(response)
 
