@@ -39,6 +39,7 @@ from exception import HRMException
 
 # TODO: Separate delete data function
 # TODO: Check number of bytes received
+__VERSION__ = 0.1
 
 
 class HeartRateMonitor(object):
@@ -65,12 +66,12 @@ class HeartRateMonitor(object):
 
         self.device.set_configuration()
 
-    def download_data(self):
+    def download_data(self, delete):
         """Connect and get all the training data from device"""
         self.open()
         self.set_baud_rate(9600)
         self.set_time_out(0xD0)
-        return self._get_all_data()
+        return self._get_all_data(delete)
 
     def _receive_command_data(self):
         """Get data from a command sent to the device."""
@@ -118,12 +119,16 @@ class HeartRateMonitor(object):
         valid = (accumulator & 0x0FF) == msg[-1]
         return valid
 
-    def _get_all_data(self):
+    def _get_all_data(self, delete):
         """Get all the training data."""
         buffer_ = []
         msg = '\x91\x01\x00\x01\x93'  # Initial message
         while True:
-            if ord(msg[3]) == 0:  # Move after send_message to delete data
+            if ord(msg[3]) == 0:
+                if delete:
+                    # The final message is the one that deletes the data
+                    self.send_message(msg)
+
                 break
 
             self.send_message(msg)
@@ -258,16 +263,30 @@ def _write_data(outputfile, outputdata):
         hfile.close()
 
 
+def _show_help():
+    """Show the help message."""
+    print 'Beurer Heart Rate Monitor Reader Version: %s' % __VERSION__
+    print 'This software reads the Beurers heart rate monitors data'
+    print 'Use:'
+    print ''
+    print '  beurer.py [-h] [-a] [-d] [-o outputfile]'
+    print ''
+    print '  -h,    Display this help message'
+    print '  -a,    Change the output to ascii'
+    print '  -o,    Redirect output to a file'
+    print '  -d,    Delete de data from the HRM'
+
 if __name__ == '__main__':
     data = None
     outputdata = ''
     outputfile = None
     asciiflag = False
+    deleteflag = False
 
     # Parser command line options
     try:
         argv = sys.argv[1:]
-        opts, args = getopt.getopt(argv, "hao:")
+        opts, args = getopt.getopt(argv, "dhao:")
 
         for option in opts:
             if option[0] == '-a':
@@ -276,18 +295,21 @@ if __name__ == '__main__':
             elif option[0] == '-o':
                 outputfile = option[1]
 
+            elif option[0] == '-d':
+                deleteflag = True
+
             elif option[0] == '-h':
-                print 'beurer.py [-a] [-o outputfile]'
+                _show_help()
                 exit(0)
 
     except getopt.GetoptError:
-        print 'beurer.py [-a] [-o outputfile]'
+        _show_help()
         sys.exit(2)
 
     # Get data
     try:
         hrt = HeartRateMonitor()
-        data = hrt.download_data()
+        data = hrt.download_data(delete=deleteflag)
 
     except HRMException as error:
         print error.msg
