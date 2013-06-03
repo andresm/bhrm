@@ -26,14 +26,24 @@ License
 GPL v2 or v3
 
 
+Hacking
+-------
+
+Theres a file named HACKING with insructions on how to help with the data
+that is not yet interpreted
+
+
 Todo
 ----
- - Finish the interpretation of section 6 Laps results
- - Interpret the speed section (5)
+ - Interpret the Speed section (5)
+ - Interpret the Height section (?)
+ - Correct the main parser bucle to stop after trying all data
  
 
 Bugs
 ----
 
-There is a bug where the program hangs when there is too much data.
+ - There is a bug where the  program sometimes hangs when there is too
+   much  data.  However, I  have not  been able  to reproduce  it, and
+   there is no data loss
 
