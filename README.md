@@ -18,17 +18,20 @@ To dump the heart rate monitor data on a file:
 
 To intepret the dumped data:
 
-  ./parser.py < inputfile
+  ./parser.py -i inputfile
+
 
 License
 -------
 GPL v2 or v3
+
 
 Todo
 ----
  - Finish the interpretation of section 6 Laps results
  - Interpret the speed section (5)
  - Check the number of bytes recieved
+
 
 Bugs
 ----

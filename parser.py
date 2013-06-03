@@ -19,10 +19,14 @@
 
 # This file interpret the raw data read from the heart rate monitor
 import sys
+import getopt
+import logging
 
 from report import HRMReport
 from exception import HRMException
 from lap import Lap
+
+__VERSION__ = 0.1
 
 
 class Parser(object):
@@ -61,6 +65,7 @@ class Parser(object):
 
     def _parse_header(self, buffer_, position):
         """Parse the data header."""
+        logging.info('Parsing header section.')
         if not self._checkchecksum(buffer_, position):
             raise HRMException('Checksum is not correct.')
 
@@ -76,6 +81,7 @@ class Parser(object):
 
     def _parse_fitness(self, buffer_, position):
         """Parse fitness section."""
+        logging.info('Parsing fitness test section.')
         base_year = 2000
         self.report.fitness_flag = buffer_[position + 2]
         self.report.min = self._bcd2hex(buffer_[position + 3])
@@ -89,6 +95,7 @@ class Parser(object):
 
     def _parse_results(self, buffer_, position):
         """Parse the results section."""
+        logging.info('Parsing global results section.')
         self.report.kcal = buffer_[position + 4]
         self.report.fat = buffer_[position + 6]
         self.report.tr_intime_seg = self._bcd2hex(buffer_[position + 8])
@@ -106,6 +113,7 @@ class Parser(object):
 
     def _parse_heart_rates(self, buffer_, position):
         """Parses the heart rates section."""
+        logging.info('Parsing heart rates section.')
         datalen = (buffer_[position + 2] << 4) + buffer_[position + 1]
         self.report.hr_data_hour = buffer_[position + 4]
         self.report.hr_data_min = buffer_[position + 5]
@@ -119,10 +127,12 @@ class Parser(object):
     def _parse_speed(self, buffer_, position):
         """Parses the heart rates section."""
         # Distance?
+        logging.info('Parsing distance section.')
         return position + buffer_[position + 1] + 4
 
     def _parse_lap_results(self, buffer_, position):
         """Parse the lap result section."""
+        logging.info('Parsing lap results section.')
         len_ = buffer_[position + 1] + 4
         lap_offset = 10
         id_ = 0
@@ -153,6 +163,53 @@ class Parser(object):
         high = (byte >> 4) & 0xF
         return low + high * 10
 
+
+def _show_help():
+    """Show the help message."""
+    print 'Beurer Heart Rate Monitor Parser version: %s' % __VERSION__
+    print 'This software interprets the data read from the Beurer HRMs'
+    print 'If no input file is given, then the data is read from stdin'
+    print ''
+    print 'Use:'
+    print ''
+    print '  parser.py [-h] [-i inputfile]'
+    print ''
+    print '  -h,        Display this help message'
+    print '  -i,        Input file'
+    print '  -v level,  Set the verbose level'
+    print '             1: Debug level'
+    print '             2: Info level'
+
+
 if __name__ == '__main__':
-    data_source = sys.stdin
-    parser = Parser(data_source)
+    inputfile = sys.stdin
+
+    # Parser command line options
+    try:
+        argv = sys.argv[1:]
+        opts, args = getopt.getopt(argv, "hi:v:")
+
+        for option in opts:
+            if option[0] == '-i':
+                inputfile = open(option[1], 'r')
+
+            elif option[0] == '-h':
+                _show_help()
+                exit(0)
+
+            elif option[0] == '-v':
+                if option[1] == '1':
+                    level = logging.DEBUG
+
+                elif option[1] == '2':
+                    level = logging.INFO
+
+                logging.basicConfig(level=level)
+
+    except getopt.GetoptError:
+        _show_help()
+        sys.exit(2)
+
+    parser = Parser(inputfile)
+    inputfile.close()
+    exit(0)
