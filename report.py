@@ -60,6 +60,12 @@ class HRMReport(object):
         self.tr_htime_hr = 0
         # Laps
         self.laps = []
+        self.lr_data_year = 0
+        self.lr_data_month = 0
+        self.lr_data_day = 0
+        self.lr_data_hour = 0
+        self.lr_data_min = 0
+        self.lr_data_seg = 0
         # Heart rate data
         self.hr_data_hour = 0
         self.hr_data_min = 0
