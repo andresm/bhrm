@@ -1,0 +1,110 @@
+Unfortunaely I do  no have access to  more HRM models, nor do  I own a
+Speedbox so  the distance and  height data is  not solved yet,  and it
+seems it wont.
+
+If you do have more sofisticated models then you can try to write the
+data adquisition and interpretation yourself.
+
+To get  the data use the  beurer.py module, by default  it will output
+the read  data as binary  data. If you  want to visualize the  data as
+ascii you can use the -a flag.
+
+The comunication with the HRM is done by "sections".  One by one, each
+section is requested to the HRM. Each type of section is identified by
+the first byte of the data.
+
+The HRM  is the one  in charge of  dictating the message  order, every
+message except initial one is mandated by the HRM using the first byte
+of the last response.
+
+The best way to analize new  sections is to dump the communication log
+to a  file, this is very  different than dumping the  data alone.  The
+communication log is  very explicit and self explanatory.  To dump the
+log, use  the -v  1 flag.  Remember that by  default beurer.py  do not
+delete the data from the HRM.
+
+As soon  as you have  the data  from the HRM  you can start  trying to
+interpret the sections not yet finished.
+
+
+Data already interpreted
+++++++++++++++++++++++++
+
+Case 1 - Personal Information - OK
+----------------------------------
+0x11
+byte1: Message length
+byte2: Ignored
+byte3: sex, age
+byte4: weight
+byte5: height
+byte6: heart rate high limit
+byte7: heart rate low limit
+byte8: herat rate maximun
+
+
+Case 2 - Results - OK
+---------------------
+0x21
+[byte 2 byte1]: len del mensaje
+byte3: genero, edad
+byte4: KCalories
+byte5: PENDING
+byte6: Fat
+byte7: PENDING
+byte8: Training in Time, Seconds (BCD)
+byte9: Training in Time, Minutes (BCD)
+byte10: Training in Time, Hours (BCD)
+byte11: Training below Time, Seconds (BCD)
+byte12: Training below Time, Minutes (BCD)
+byte13: Training below Time, Hours (BCD)
+byte14: Training over Time, Seconds (BCD)
+byte15: Training over Time, Minutes (BCD)
+byte16: Training over Time, Hours (BCD)
+byte17: Training maximun heart rate
+byte18: Training average heart rate
+
+
+Case 3 - Fitness test - OK
+--------------------------
+0x31
+byte1: Section length
+byte2: If fitness test was performed
+byte3: Minute (BCD)
+byte4: Hour (BCD)
+byte5: Day (BCD)
+byte6: Month (BCD)
+byte7: Year - 2000 (BCD)
+byte8: Fitness level
+byte9: VO2Max
+
+
+Case 4 - Heart rate data - OK
+-----------------------------
+0x41 
+[byte2 byte1]: Message length
+byte4: PENDING. Training id?
+byte3: PENDING
+byte4: Minute (BCD)
+byte5: Hour (BCD)
+byte6+: Heart rates
+
+
+Case 5 - Distance
+-----------------
+0x51
+PENDING
+
+
+Case 6 - Resultado por LAP
+--------------------------
+0x61
+[byte2 byte1]: Length of section
+byte3: PENDING. Training id?
+byte4: Start second (BCD)
+byte5: Start minute (BCD)
+byte6: Start hour (BCD)
+byte7: Day (BCD)
+byte8: Month (BCD)
+byte9: Year - 2000 (BCD)
+byte10+: Lap results in 4 byte groups [seg min hour hr]
