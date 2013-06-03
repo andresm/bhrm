@@ -33,35 +33,50 @@ class Parser(object):
 
     """Interpret the raw data from the HRM."""
 
-    def __init__(self, stream):
+    def __init__(self):
         """Initializes the object"""
         super(Parser, self).__init__()
+
+    def parse(self, stream):
+        """Parse a data stream."""
         self.report = HRMReport()
         position = 0
         buffer_ = map(ord, stream.read())
         i = 0
 
-        while i < 6:
+        while i < 6:  # FIXME: Until end of data
             if (buffer_[position] >> 4) == 1:
                 position = self._parse_header(buffer_, position)
 
-            if (buffer_[position] >> 4) == 2:
+            elif (buffer_[position] >> 4) == 2:
                 position = self._parse_results(buffer_, position)
 
-            if (buffer_[position] >> 4) == 3:
+            elif (buffer_[position] >> 4) == 3:
                 position = self._parse_fitness(buffer_, position)
 
-            if (buffer_[position] >> 4) == 4:
+            elif (buffer_[position] >> 4) == 4:
                 position = self._parse_heart_rates(buffer_, position)
 
-            if (buffer_[position] >> 4) == 5:
+            elif (buffer_[position] >> 4) == 5:
                 position = self._parse_speed(buffer_, position)
 
-            if (buffer_[position] >> 4) == 6:
+            elif (buffer_[position] >> 4) == 6:
                 position = self._parse_lap_results(buffer_, position)
 
+            else:
+                position = self._parse_unkown(buffer_, position)
+
             i += 1
-        self.report.dump()
+
+        return self.report
+
+    def _parse_unkown(self, buffer_, position):
+        """Parse unkown section."""
+        section = buffer_[position] >> 4
+        logging.warning('Do not know how to parse section %s.' % section)
+        final_byte = position + buffer_[position + 1] + 4
+        logging.debug(map(hex, buffer_[position:final_byte]))
+        return final_byte
 
     def _parse_header(self, buffer_, position):
         """Parse the data header."""
@@ -231,6 +246,8 @@ if __name__ == '__main__':
         _show_help()
         sys.exit(2)
 
-    parser = Parser(inputfile)
+    parser = Parser()
+    report = parser.parse(inputfile)
+    report.dump()
     inputfile.close()
     exit(0)
